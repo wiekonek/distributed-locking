@@ -1,4 +1,4 @@
-﻿
+
 using Newtonsoft.Json;
 using System.Threading.Tasks;
 
@@ -30,7 +30,7 @@ namespace DistributedMonitor.Primitives
       Unlock();
     }
 
-    public async Task<int> Add(int value)
+    public async Task<int> AddAsync(int value)
     {
       await LockAsync();
       _value = _value + value;

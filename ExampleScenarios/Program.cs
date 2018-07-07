@@ -1,4 +1,4 @@
-using System;
+using DistributedMonitor;
 
 namespace ExampleScenarios
 {
@@ -6,7 +6,10 @@ namespace ExampleScenarios
   {
     static void Main(string[] args)
     {
-      Console.WriteLine("Hello world!");
+      var systemName = "distributed-environment-name";
+      var conf = Config.GetDockerConfigString(systemName);
+      new DistributedEnvironment(systemName, conf);
+      while (true) { }
     }
   }
 }

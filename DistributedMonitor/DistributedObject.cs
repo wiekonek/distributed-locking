@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using Akka.Actor;
 using DistributedMonitor.Actors.Messages;
 
@@ -20,6 +20,8 @@ namespace DistributedMonitor
       _env = env;
       _actor = _env.Register(this);
     }
+
+    
 
     public abstract string JsonData { get; set; }
 

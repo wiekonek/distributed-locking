@@ -1,4 +1,4 @@
-﻿using Akka.Actor;
+using Akka.Actor;
 using Akka.Configuration;
 using DistributedMonitor.Actors;
 using DistributedMonitor.Actors.Messages;
@@ -14,10 +14,16 @@ namespace DistributedMonitor
 
     internal ActorSystem DistributedSystem { get; }
 
-    public DistributedEnvironment(string config)
+    /// <summary>
+    /// Create core system for distirbuted locking library.
+    /// </summary>
+    /// <param name="systemName">Must match system name in seed declaration inside <paramref name="config"/>.</param>
+    /// <param name="config">Remember to set system name in seed path to <paramref name="systemName"/>.</param>
+    public DistributedEnvironment(string systemName, string config)
     {
+      var conf = ConfigurationFactory.ParseString(config);
       _register = new Dictionary<string, DistributedObjectData>();
-      DistributedSystem = ActorSystem.Create("distributed-locking", ConfigurationFactory.ParseString(config));
+      DistributedSystem = ActorSystem.Create(systemName, ConfigurationFactory.ParseString(config));
     }
 
     public DistributedEnvironment()

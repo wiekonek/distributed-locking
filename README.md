@@ -1,4 +1,4 @@
-# Student project for Distributed Computing Tools of Poznañ University of Technology.
+# Student project for Distributed Computing Tools of PoznaÅ„ University of Technology.
 
 
 Implement distributed monitor.

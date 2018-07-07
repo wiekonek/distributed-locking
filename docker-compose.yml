@@ -1,0 +1,29 @@
+version: '3.4'
+
+services:
+  seed:
+    image: ${DOCKER_REGISTRY}examplescenarios
+    environment:
+      IS_AKKA_SEED: "true"
+    build:
+      context: .
+      dockerfile: ExampleScenarios/Dockerfile
+    hostname: master
+    networks:
+      - akka-network
+
+  node:
+    image: ${DOCKER_REGISTRY}examplescenarios
+    environment:
+      IS_AKKA_SEED: "false"
+    build:
+      context: .
+      dockerfile: ExampleScenarios/Dockerfile
+    networks:
+      - akka-network
+    links:
+      - seed:master
+
+networks:
+  akka-network:
+    driver: bridge

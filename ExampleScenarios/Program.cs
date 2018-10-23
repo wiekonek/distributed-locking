@@ -1,15 +1,52 @@
+using Akka.Actor;
+using Akka.Cluster;
+using Akka.Configuration;
+using Akka.Event;
 using DistributedMonitor;
+using DistributedMonitor.Primitives;
+using System;
+using System.Threading.Tasks;
 
 namespace ExampleScenarios
 {
   class Program
   {
-    static void Main(string[] args)
+    static async Task Main(string[] args)
     {
       var systemName = "distributed-environment-name";
       var conf = Config.GetDockerConfigString(systemName);
-      new DistributedEnvironment(systemName, conf);
-      while (true) { }
+      var env = await DistributedEnvironment.Initialize(systemName, conf);
+
+      //var dInt = new DInt("int-name", env);
+      //var dInt2 = new DInt("second-int", env);
+      //dInt.
+      //await Task.Delay(5000);
+
+      //for (int i = 0; i < 100; i++)
+      //{
+      //  Console.WriteLine(await dInt.AddAsync(1));
+      //  Console.WriteLine(await dInt2.AddAsync(2));
+      //  await Task.Delay(100);
+      //}
+
+
+      var buffor = new DBuffor<int>(5, "buffor-name", env);
+      if(bool.Parse(Environment.GetEnvironmentVariable("IS_PROD"))) {
+        for(int i = 0; i < 50; i++)
+        {
+          await buffor.Add(i);
+          Console.WriteLine($"[{i}] produced");
+        }
+      } else
+      {
+        for (int i = 0; i < 50; i++)
+        {
+          var whatIGet = await buffor.Take();
+          Console.WriteLine($"Consuming: [{whatIGet}]");
+        }
+      }
+
+      await Task.Delay(-1);
     }
   }
 }

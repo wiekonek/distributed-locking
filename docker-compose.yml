@@ -1,10 +1,15 @@
 version: '3.4'
 
+networks:
+  akka-network:
+    driver: bridge
+
 services:
   seed:
     image: ${DOCKER_REGISTRY}examplescenarios
     environment:
       IS_AKKA_SEED: "true"
+      IS_PROD: "true"
     build:
       context: .
       dockerfile: ExampleScenarios/Dockerfile
@@ -12,10 +17,11 @@ services:
     networks:
       - akka-network
 
-  node:
+  prod:
     image: ${DOCKER_REGISTRY}examplescenarios
     environment:
       IS_AKKA_SEED: "false"
+      IS_PROD: "true"
     build:
       context: .
       dockerfile: ExampleScenarios/Dockerfile
@@ -24,6 +30,17 @@ services:
     links:
       - seed:master
 
-networks:
-  akka-network:
-    driver: bridge
+  cons:
+    image: ${DOCKER_REGISTRY}examplescenarios
+    environment:
+      IS_AKKA_SEED: "false"
+      IS_PROD: "false"
+    build:
+      context: .
+      dockerfile: ExampleScenarios/Dockerfile
+    networks:
+      - akka-network
+    links:
+      - seed:master
+
+

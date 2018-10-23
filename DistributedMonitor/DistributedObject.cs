@@ -1,5 +1,7 @@
+using System;
 using System.Threading.Tasks;
 using Akka.Actor;
+using DistributedMonitor.Actors;
 using DistributedMonitor.Actors.Messages;
 
 namespace DistributedMonitor
@@ -10,60 +12,56 @@ namespace DistributedMonitor
     private readonly DistributedEnvironment _env;
     private readonly IActorRef _actor;
 
-    private bool _locked;
-
     public string Name { get; }
 
     protected DistributedObject(DistributedEnvironment env, string name)
     {
       Name = name;
       _env = env;
-      _actor = _env.Register(this);
+      _actor = _env.DistributedSystem.ActorOf<DistributedObjectActor>(name);
+      _actor.Tell(new InternalMessages.Init(this));
     }
-
-    
 
     public abstract string JsonData { get; set; }
-
+    
     protected async Task LockAsync()
     {
-      _locked = true;
-      await Task.CompletedTask;
-    }
-
-    protected void Unlock()
-    {
-      _locked = false;
-      Update();
+      await _actor.Ask<Empty>(new InternalMessages.AskLock());
       return;
     }
 
-    protected async Task WaitAsync()
+    protected async Task UnlockAsync()
     {
-      if (!_locked)
-      {
-        throw new DistributedLockingException("WaitAsync() can be called only when object is locked (use LockAsync() first)");
-      }
-      _locked = false;
-      await Task.CompletedTask;
-    }
-
-    protected void Notify()
-    {
-      Update();
+      await UpdateAsync();
+      await _actor.Ask<Empty>(new InternalMessages.AskUnlock());
       return;
     }
 
-    protected void NotifyAll()
-    {
-      Update();
-      return;
-    }
+    //protected async Task WaitAsync()
+    //{
+    //  if (!_locked)
+    //  {
+    //    throw new DistributedLockingException("WaitAsync() can be called only when object is locked (use LockAsync() first)");
+    //  }
+    //  _locked = false;
+    //  await Task.CompletedTask;
+    //}
 
-    private void Update()
+    //protected async Task NotifyAsync()
+    //{
+    //  await UpdateAsync();
+    //  return;
+    //}
+
+    //protected async Task NotifyAllAsync()
+    //{
+    //  await UpdateAsync();
+    //  return;
+    //}
+
+    private async Task UpdateAsync()
     {
-      _env.UpdateObject(Name, JsonData);
-      _actor.Tell(new UpdateMeMsg(JsonData));
+      await _actor.Ask<Empty>(new InternalMessages.AskUpdateObject(JsonData));
       return;
     }
   }

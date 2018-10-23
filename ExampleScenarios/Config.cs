@@ -64,7 +64,7 @@ namespace ExampleScenarios
           cluster {
             metrics.enabled = off
             seed-nodes = [""akka.tcp://" + systemName + @"@" + masterIp + @":8081""]
-            auto-down-unreachable-after = 5s
+            auto-down-unreachable-after = 25s
           }
         }
         ";

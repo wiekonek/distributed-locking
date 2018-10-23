@@ -27,14 +27,14 @@ namespace DistributedMonitor.Primitives
     {
       await LockAsync();
       _value = value;
-      Unlock();
+      await UnlockAsync();
     }
 
     public async Task<int> AddAsync(int value)
     {
       await LockAsync();
       _value = _value + value;
-      Unlock();
+      await UnlockAsync();
       return _value;
     }
 

@@ -172,7 +172,7 @@ namespace DistributedMonitor.Actors
           break;
 
         case InternalMessages.AskWait wait:
-          _log.Info($"Now I'm waiting [{_address}] in [{wait.Conditional}]");
+          //_log.Info($"Now I'm waiting [{_address}] in [{wait.Conditional}]");
 
           _token.Conditionals[wait.Conditional].Enqueue(_address);
           _askWaitResponseActors.Add(wait.Conditional, Sender);
@@ -184,7 +184,7 @@ namespace DistributedMonitor.Actors
           var q = _token.Conditionals[pulse.Conditional];
           if (q.Count > 0)
           {
-            _log.Info($"Pulsing [{pulse.Conditional}]");
+            //_log.Info($"Pulsing [{pulse.Conditional}]");
             ActorForAddress(q.Dequeue()).Tell(new ExternalMessages.Pulse(pulse.Conditional));
           }
           Sender.Tell(Empty.Default, Self);

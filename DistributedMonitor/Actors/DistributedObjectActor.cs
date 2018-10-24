@@ -190,6 +190,18 @@ namespace DistributedMonitor.Actors
           Sender.Tell(Empty.Default, Self);
           break;
 
+        case InternalMessages.AskPulseAll pulse:
+          var qu = _token.Conditionals[pulse.Conditional];
+          if (qu.Count > 0)
+          {
+            foreach (var queuer in qu)
+            {
+              ActorForAddress(queuer).Tell(new ExternalMessages.Pulse(pulse.Conditional));
+            }
+          }
+          Sender.Tell(Empty.Default, Self);
+          break;
+
         case InternalMessages.AskLock l:
           if (_token != null)
           {

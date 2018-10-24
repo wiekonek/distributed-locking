@@ -66,5 +66,15 @@ namespace DistributedMonitor.Actors.Messages
         Conditional = conditional;
       }
     }
+
+    internal class AskPulseAll : IInternalMessage
+    {
+      public string Conditional { get; set; }
+
+      public AskPulseAll(string conditional)
+      {
+        Conditional = conditional;
+      }
+    }
   }
 }

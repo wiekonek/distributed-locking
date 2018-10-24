@@ -80,7 +80,7 @@ namespace DistributedMonitor
       {
         throw new DistributedLockingException($"Conditional [{conditional}] not defined");
       }
-
+      await _actor.Ask(new InternalMessages.AskPulseAll(conditional));
       await UpdateAsync();
       return;
     }

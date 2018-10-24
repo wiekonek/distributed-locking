@@ -10,8 +10,11 @@ namespace DistributedMonitor.Actors.Messages
 
     internal class AskLock : IInternalMessage
     {
-      public AskLock()
+      public string Conditional { get; set; }
+
+      public AskLock(string conditional = null)
       {
+        Conditional = conditional;
       }
     }
 
@@ -35,10 +38,32 @@ namespace DistributedMonitor.Actors.Messages
     internal class Init : IInternalMessage
     {
       public DistributedObject DistributedObject { get; set; }
+      public string[] Conditionals { get; set; }
 
-      public Init(DistributedObject distributedObject)
+      public Init(DistributedObject distributedObject, string[] conditionals)
       {
         DistributedObject = distributedObject;
+        Conditionals = conditionals;
+      }
+    }
+
+    internal class AskWait : IInternalMessage
+    {
+      public string Conditional { get; set; }
+
+      public AskWait(string conditional)
+      {
+        Conditional = conditional;
+      }
+    }
+
+    internal class AskPulse : IInternalMessage
+    {
+      public string Conditional { get; set; }
+
+      public AskPulse(string conditional)
+      {
+        Conditional = conditional;
       }
     }
   }

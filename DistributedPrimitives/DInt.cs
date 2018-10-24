@@ -8,7 +8,9 @@ namespace DistributedMonitor.Primitives
   {
     private int _value = 0;
 
-    public DInt(string name, DistributedEnvironment env) : base(env, name)
+    private const string NOT_ENOUGH = "not-enough";
+
+    public DInt(string name, DistributedEnvironment env) : base(env, name, NOT_ENOUGH)
     {
     }
 
@@ -34,6 +36,16 @@ namespace DistributedMonitor.Primitives
     {
       await LockAsync();
       _value = _value + value;
+      await PulseAsync(NOT_ENOUGH);
+      await UnlockAsync();
+      return _value;
+    }
+
+    public async Task<int> SubtractIfResultIsPositive(int value)
+    {
+      await LockAsync();
+      while (_value < value) await WaitAsync(NOT_ENOUGH);
+      _value = _value - value;
       await UnlockAsync();
       return _value;
     }

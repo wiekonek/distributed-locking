@@ -17,6 +17,7 @@ namespace DistributedMonitor.Actors
 
     private DistributedObject _obj;
     private IActorRef _askLockResponseActor;
+    private Dictionary<string, IActorRef> _askWaitResponseActors;
 
     private Dictionary<Address, int> _requestNumber = new Dictionary<Address, int>();
     private Token _token;
@@ -30,6 +31,7 @@ namespace DistributedMonitor.Actors
     protected override void PreStart()
     {
       base.PreStart();
+      _askWaitResponseActors = new Dictionary<string, IActorRef>();
       _nodes = new List<Member>();
       _cluster = Cluster.Get(Context.System);
       _cluster.Subscribe(Self, ClusterEvent.InitialStateAsEvents,
@@ -72,9 +74,6 @@ namespace DistributedMonitor.Actors
     {
       switch (message)
       {
-        case ExternalMessages.HelloWorld m:
-          _log.Info($"Hello message received:  {m.Msg}");
-          break;
 
         case ExternalMessages.RequestCS request:
           //_log.Info("Receive cs request with sn:" + request.SequenceNumber);
@@ -94,8 +93,11 @@ namespace DistributedMonitor.Actors
           break;
 
         case ExternalMessages.TokenMsg token:
-          _token = new Token(token.LastRequestNumber.ToDictionary(pair => Address.Parse(pair.Key), pair => pair.Value),
-            new Queue<Address>(token.Queue.Select(x => Address.Parse(x))));
+          _token = new Token(
+            token.LastRequestNumber.ToDictionary(pair => Address.Parse(pair.Key), pair => pair.Value),
+            new Queue<Address>(token.Queue.Select(x => Address.Parse(x))),
+            token.Conditionals.ToDictionary(pair => pair.Key, pair => new Queue<Address>(pair.Value.Select(x => Address.Parse(x))))
+          );
           if (_askLockResponseActor != null)
           {
             _inCriticalSection = true;
@@ -111,6 +113,37 @@ namespace DistributedMonitor.Actors
           break;
 
 
+        case ExternalMessages.Pulse pulse:
+          var addr = _askWaitResponseActors[pulse.Conditional];
+          _askWaitResponseActors.Remove(pulse.Conditional);
+          Self.Tell(new InternalMessages.AskLock(pulse.Conditional), addr);
+          //if (_token != null)
+          //{
+          //  _inCriticalSection = true;
+          //  Sender.Tell(Empty.Default, Self);
+          //}
+          //else
+          //{
+          //  var sn = ++_requestNumber[_address];
+
+          //  foreach (var node in _nodes)
+          //  {
+          //    if (_address == node.Address)
+          //    {
+          //      continue;
+          //    }
+
+          //    ActorForAddress(node.Address).Tell(new ExternalMessages.RequestCS(sn));
+          //  }
+
+          //  _askLockResponseActor = Sender;
+          //}
+
+
+          //_askWaitResponseActors[pulse.Conditional].Tell(Empty.Default, Self);
+          break;
+
+
         default:
           Unhandled(message);
           break;
@@ -123,14 +156,52 @@ namespace DistributedMonitor.Actors
       {
         case InternalMessages.Init init:
           _obj = init.DistributedObject;
+          if (bool.Parse(Environment.GetEnvironmentVariable("IS_AKKA_SEED")))
+          {
+            if (_token == null)
+            {
+              _token = new Token(new Dictionary<Address, int>(), new Queue<Address>());
+            }
 
+            _token.Conditionals = new Dictionary<string, Queue<Address>>();
+            foreach (var cond in init.Conditionals ?? Enumerable.Empty<string>())
+            {
+              _token.Conditionals.Add(cond, new Queue<Address>());
+            }
+          }
           break;
 
-        case InternalMessages.AskLock _:
+        case InternalMessages.AskWait wait:
+          _log.Info($"Now I'm waiting [{_address}] in [{wait.Conditional}]");
+
+          _token.Conditionals[wait.Conditional].Enqueue(_address);
+          _askWaitResponseActors.Add(wait.Conditional, Sender);
+          Self.Tell(new InternalMessages.AskUnlock());
+          break;
+
+        case InternalMessages.AskPulse pulse:
+
+          var q = _token.Conditionals[pulse.Conditional];
+          if (q.Count > 0)
+          {
+            _log.Info($"Pulsing [{pulse.Conditional}]");
+            ActorForAddress(q.Dequeue()).Tell(new ExternalMessages.Pulse(pulse.Conditional));
+          }
+          Sender.Tell(Empty.Default, Self);
+          break;
+
+        case InternalMessages.AskLock l:
           if (_token != null)
           {
             _inCriticalSection = true;
             //_log.Info("Entering cs");
+            //if (l == null)
+            //{
+            //  Sender.Tell(Empty.Default, Self);
+            //} else
+            //{
+            //  _askWaitResponseActors[l.Conditional].Tell(Empty.Default, Self);
+            //}
             Sender.Tell(Empty.Default, Self);
           }
           else
@@ -149,6 +220,10 @@ namespace DistributedMonitor.Actors
               ActorForAddress(node.Address).Tell(new ExternalMessages.RequestCS(sn));
             }
 
+            //if (l == null)
+            //{
+            //  _askLockResponseActor = Sender;
+            //}
             _askLockResponseActor = Sender;
           }
           break;
@@ -217,7 +292,11 @@ namespace DistributedMonitor.Actors
           _requestNumber.Add(member.Address, 0);
           if (bool.Parse(Environment.GetEnvironmentVariable("IS_AKKA_SEED")))
           {
-            if (_token == null) _token = new Token(new Dictionary<Address, int>(), new Queue<Address>());
+            if (_token == null)
+            {
+              _token = new Token(new Dictionary<Address, int>(), new Queue<Address>());
+            }
+
             _token.LastRequestNumber.Add(member.Address, 0);
           }
 

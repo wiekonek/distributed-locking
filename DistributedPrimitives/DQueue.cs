@@ -31,6 +31,8 @@ namespace DistributedMonitor.Primitives
 
     public async Task Add(T item)
     {
+      await LockAsync();
+      //while(_producingIndex)
       return;
     }
 

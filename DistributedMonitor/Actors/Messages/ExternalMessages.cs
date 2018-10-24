@@ -34,11 +34,13 @@ namespace DistributedMonitor.Actors.Messages
     {
       public List<string> Queue { get; set; }
       public Dictionary<string, int> LastRequestNumber { get; set; }
+      public Dictionary<string, List<string>> Conditionals { get; set; }
 
-      public TokenMsg(Dictionary<string, int> lastRequestNumber, List<string> queue)
+      public TokenMsg(Dictionary<string, int> lastRequestNumber, List<string> queue, Dictionary<string, List<string>> conditionals = null)
       {
         Queue = queue;
         LastRequestNumber = lastRequestNumber;
+        Conditionals = conditionals;
       }
     }
 
@@ -49,6 +51,16 @@ namespace DistributedMonitor.Actors.Messages
       public UpdateData(string jsonData)
       {
         JsonData = jsonData;
+      }
+    }
+
+    internal class Pulse : IExternalMessage
+    {
+      public string Conditional { get; set; }
+
+      public Pulse(string conditional)
+      {
+        Conditional = conditional;
       }
     }
   }
